@@ -75,6 +75,27 @@ public class UserService {
     }
     
     /**
+     * Login a user with username and password
+     * @param username The username
+     * @param password The plain text password
+     * @return true if login successful, false otherwise
+     */
+    public boolean loginUser(String username, String password) {
+        User user = users.get(username);
+        if (user == null) {
+            return false;
+        }
+        
+        try {
+            byte[] hashedInput = hashPassword(password, user.getSalt());
+            return Arrays.equals(hashedInput, user.getHashedPassword());
+        } catch (Exception e) {
+            // Log the error in a real application
+            return false;
+        }
+    }
+    
+    /**
      * Check if a username exists
      * @param username The username to check
      * @return true if username exists, false otherwise
