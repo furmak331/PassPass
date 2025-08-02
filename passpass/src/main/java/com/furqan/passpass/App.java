@@ -1,8 +1,6 @@
 package com.furqan.passpass;
 
 import java.util.Scanner;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * PassPass - A simple password manager CLI application
@@ -10,7 +8,7 @@ import java.util.Map;
 public class App 
 {
     private static Scanner scanner = new Scanner(System.in);
-    private static Map<String, String> users = new HashMap<>();
+    private static UserService userService = new UserService();
     
     public static void main( String[] args )
     {
@@ -70,7 +68,7 @@ public class App
         System.out.print("Enter username: ");
         String username = scanner.nextLine();
         
-        if (users.containsKey(username)) {
+        if (userService.userExists(username)) {
             System.out.println("Username already exists! Please choose a different username.");
             return;
         }
@@ -78,13 +76,20 @@ public class App
         System.out.print("Enter password: ");
         String password = scanner.nextLine();
         
-        if (password.length() < 6) {
+        if (!userService.isValidPassword(password)) {
             System.out.println("Password must be at least 6 characters long!");
             return;
         }
         
-        users.put(username, password);
-        System.out.println("Registration successful! You can now login with your credentials.");
+        try {
+            if (userService.registerUser(username, password)) {
+                System.out.println("Registration successful! You can now login with your credentials.");
+            } else {
+                System.out.println("Registration failed. Please try again.");
+            }
+        } catch (RuntimeException e) {
+            System.out.println("Registration failed due to a system error. Please try again.");
+        }
     }
     
     private static void loginUser() {
@@ -95,7 +100,7 @@ public class App
         System.out.print("Enter password: ");
         String password = scanner.nextLine();
         
-        if (users.containsKey(username) && users.get(username).equals(password)) {
+        if (userService.authenticateUser(username, password)) {
             System.out.println("Login successful! Welcome, " + username + "!");
             // Here you could add more functionality for logged-in users
             showUserMenu(username);
