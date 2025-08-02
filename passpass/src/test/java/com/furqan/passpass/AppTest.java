@@ -5,7 +5,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 /**
- * Unit test for simple App.
+ * Unit test for PassPass App.
  */
 public class AppTest 
     extends TestCase
@@ -29,10 +29,24 @@ public class AppTest
     }
 
     /**
-     * Rigourous Test :-)
+     * Test the App class exists and can be instantiated
      */
     public void testApp()
     {
-        assertTrue( true );
+        App app = new App();
+        assertNotNull("App should not be null", app);
+    }
+    
+    /**
+     * Test that the main method exists (basic smoke test)
+     */
+    public void testMainMethodExists()
+    {
+        try {
+            App.class.getMethod("main", String[].class);
+            assertTrue("Main method should exist", true);
+        } catch (NoSuchMethodException e) {
+            fail("Main method should exist");
+        }
     }
 }
