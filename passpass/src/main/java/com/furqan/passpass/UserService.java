@@ -17,16 +17,13 @@ public class UserService {
     private static final int SALT_LENGTH = 16; // 128 bits
     private static final int HASH_LENGTH = 32; // 256 bits
     private static final int ITERATIONS = 100000; // OWASP recommended minimum
-    
-    private final Map<String, User> users;
+
     private final SecureRandom secureRandom;
-    
-    /**
-     * Constructor for UserService
-     */
+    private final DatabaseService dbService;
+
     public UserService() {
-        this.users = new HashMap<>();
         this.secureRandom = new SecureRandom();
+        this.dbService = new DatabaseService();
     }
     
     /**
@@ -37,16 +34,13 @@ public class UserService {
      * @throws RuntimeException if password hashing fails
      */
     public boolean registerUser(String username, String password) {
-        if (users.containsKey(username)) {
+        if (userExists(username)) {
             return false;
         }
-        
         try {
             byte[] salt = generateSalt();
             byte[] hashedPassword = hashPassword(password, salt);
-            
-            User user = new User(username, hashedPassword, salt);
-            users.put(username, user);
+            dbService.addUser(username, hashedPassword, salt);
             return true;
         } catch (Exception e) {
             throw new RuntimeException("Failed to hash password during registration", e);
@@ -60,16 +54,14 @@ public class UserService {
      * @return true if authentication successful, false otherwise
      */
     public boolean authenticateUser(String username, String password) {
-        User user = users.get(username);
+        User user = getUser(username);
         if (user == null) {
             return false;
         }
-        
         try {
             byte[] hashedInput = hashPassword(password, user.getSalt());
             return Arrays.equals(hashedInput, user.getHashedPassword());
         } catch (Exception e) {
-            // Log the error in a real application
             return false;
         }
     }
@@ -81,18 +73,7 @@ public class UserService {
      * @return true if login successful, false otherwise
      */
     public boolean loginUser(String username, String password) {
-        User user = users.get(username);
-        if (user == null) {
-            return false;
-        }
-        
-        try {
-            byte[] hashedInput = hashPassword(password, user.getSalt());
-            return Arrays.equals(hashedInput, user.getHashedPassword());
-        } catch (Exception e) {
-            // Log the error in a real application
-            return false;
-        }
+        return authenticateUser(username, password);
     }
     
     /**
@@ -101,7 +82,11 @@ public class UserService {
      * @return true if username exists, false otherwise
      */
     public boolean userExists(String username) {
-        return users.containsKey(username);
+        try {
+            return dbService.getUser(username) != null;
+        } catch (Exception e) {
+            return false;
+        }
     }
     
     /**
@@ -110,7 +95,11 @@ public class UserService {
      * @return User object or null if not found
      */
     public User getUser(String username) {
-        return users.get(username);
+        try {
+            return dbService.getUser(username);
+        } catch (Exception e) {
+            return null;
+        }
     }
     
     /**
@@ -118,7 +107,8 @@ public class UserService {
      * @return number of users
      */
     public int getUserCount() {
-        return users.size();
+        // Not implemented for DB version
+        return -1;
     }
     
     /**
@@ -169,6 +159,6 @@ public class UserService {
      * Clear all users (for testing purposes)
      */
     public void clearAllUsers() {
-        users.clear();
+        // Not implemented for DB version
     }
 }
