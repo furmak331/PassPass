@@ -14,11 +14,15 @@ import java.util.Base64;
  * Service for managing vault entries and encryption
  */
 public class VaultService {
-    private final Map<String, List<VaultEntry>> userVaults = new HashMap<>();
     private static final String AES = "AES/CBC/PKCS5Padding";
     private static final int KEY_SIZE = 256;
     private static final int ITERATIONS = 65536;
     private static final int IV_SIZE = 16;
+    private final DatabaseService dbService;
+
+    public VaultService() {
+        this.dbService = new DatabaseService();
+    }
 
     // Derive AES key from password and salt
     public SecretKeySpec deriveKey(String password, byte[] salt) throws Exception {
@@ -52,13 +56,26 @@ public class VaultService {
         return new String(decrypted);
     }
 
-    // Add a vault entry for a user
+    // Add a vault entry for a user (persistent)
     public void addEntry(String username, VaultEntry entry) {
-        userVaults.computeIfAbsent(username, k -> new ArrayList<>()).add(entry);
+        try {
+            dbService.addVaultEntry(
+                username,
+                entry.getSite(),
+                entry.getSiteUsername(),
+                entry.getEncryptedPassword().getBytes()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to add vault entry", e);
+        }
     }
 
-    // Get all vault entries for a user
+    // Get all vault entries for a user (persistent)
     public List<VaultEntry> getEntries(String username) {
-        return userVaults.getOrDefault(username, Collections.emptyList());
+        try {
+            return dbService.getVaultEntries(username);
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 }
